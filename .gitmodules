@@ -1,0 +1,4 @@
+[submodule "tedavr"]
+	path = tedavr
+	url = https://github.com/TeddyHutteddy/tedavr.git
+	branch = _wip_v2.0

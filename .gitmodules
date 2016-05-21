@@ -2,3 +2,9 @@
 	path = tedavr
 	url = https://github.com/TeddyHutteddy/tedavr.git
 	branch = _wip_v2.0
+[submodule "light_ws2812"]
+	path = light_ws2812
+	url = https://github.com/cpldcpu/light_ws2812.git
+[submodule "ds_rtc_lib"]
+	path = ds_rtc_lib
+	url = https://github.com/akafugu/ds_rtc_lib.git

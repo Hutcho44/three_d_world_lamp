@@ -41,7 +41,7 @@
 
 
 # MCU name
-MCU = atmega328
+MCU = atmega328p
 
 
 # Processor frequency.
@@ -62,9 +62,40 @@ MCU = atmega328
 #         F_CPU = 16000000
 #         F_CPU = 18432000
 #         F_CPU = 20000000
-F_CPU = 1000000
+F_CPU = 20000000
+CPU_FREQ = 20000000
 
+# Default values
+FEATURE_SET_TIME ?= YES
+FEATURE_CHARACTERS ?= YES
+FEATURE_CHANGE_TWI_ADDRESS ?= YES
+FEATURE_SHOW_ADDRESS_ON_STARTUP ?= YES
+FEATURE_LOWERCASE ?= YES
 
+ifeq ($(MCU), attiny4313)
+  FEATURE_CHANGE_TWI_ADDRESS ?= YES
+  FEATURE_SHOW_ADDRESS_ON_NO_DATA ?= YES
+endif
+
+ifneq ($(DEFAULT_BRIGHTNESS), )
+  CFLAGS += -DDEFAULT_BRIGHTNESS=$(DEFAULT_BRIGHTNESS)
+endif
+
+# These will automatically be checked if they are set to YES
+SPECIAL_DEFS += DEMO \
+	FEATURE_SET_TIME \
+	FEATURE_CHARACTERS \
+	FEATURE_CHANGE_TWI_ADDRESS \
+	FEATURE_SHOW_ADDRESS_ON_STARTUP \
+	FEATURE_LOWERCASE
+
+define CHECK_ANSWER
+  ifeq ($$($(1)), YES)
+    CFLAGS += -D$(1)
+  endif
+endef
+
+$(foreach i,$(SPECIAL_DEFS),$(eval $(call CHECK_ANSWER,$(i))))
 # Output format. (can be srec, ihex, binary)
 FORMAT = ihex
 
@@ -80,7 +111,7 @@ OBJDIR = .
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = 
+SRC = tedavr/source/hd44780.c light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c ds_rtc_lib/library-gcc/rtc.c ds_rtc_lib/library-gcc/twi.c ds_rtc_lib/library-gcc/twi-lowlevel.c
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
@@ -126,7 +157,7 @@ CSTANDARD = -std=gnu99
 
 
 # Place -D or -U options here for C sources
-CDEFS = -DF_CPU=$(F_CPU)UL
+CDEFS = -DF_CPU=$(F_CPU)UL -DCPU_FREQ=$(CPU_FREQ)UL
 
 
 # Place -D or -U options here for ASM sources
@@ -134,7 +165,7 @@ ADEFS = -DF_CPU=$(F_CPU)
 
 
 # Place -D or -U options here for C++ sources
-CPPDEFS = -DF_CPU=$(F_CPU)UL
+CPPDEFS = -DF_CPU=$(F_CPU)UL -DCPU_FREQ=$(CPU_FREQ)UL
 #CPPDEFS += -D__STDC_LIMIT_MACROS
 #CPPDEFS += -D__STDC_CONSTANT_MACROS
 

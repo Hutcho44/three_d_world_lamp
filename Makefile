@@ -80,7 +80,7 @@ OBJDIR = .
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c tedavr/source/general.c
+SRC = light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c tedavr/source/general.c tedavr/source/button.c
 
 
 # List C++ source files here. (C dependencies are automatically generated.)

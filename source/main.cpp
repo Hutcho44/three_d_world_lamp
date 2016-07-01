@@ -2,6 +2,7 @@
 #include <stdio.h>															//Include things like sprintf
 #include <string.h>															//Include things like strcpy
 #include "../tedavr/include/tedavr/ic_hd44780.h"							//Include display class
+#include "../tedavr/include/tedavr/button.h"
 #include "../include/ic_ds1307.h"											//Include clock class
 #include "../light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.h"		//Include ws2812 (neopixel) functions
 
@@ -12,52 +13,96 @@ constexpr uint8_t calculate_twbr(float const scl_freq, float const prescale = 1,
 
 //Initialise special function registers
 void sfr_init() {
-	DDRD = 0b11111111;					//Set all 8 PORTD pins to outputs
+	//---Inputs/Output Setup---//
+
+	DDRD = 0b11111011;					//Set all 8 PORTD pins to outputs
 	DDRB = 0b11111111;					//Set all 8 PORTD pins to outputs
 	DDRC = 0b001111;					//Sets two PORTC pins to inputs (the the clock), and the rest to outputs (PORTC only has 6 pins)
-	PORTD = 0;							//Set the outpus on PORTD to 0
+	PORTD = 0b00000100;					//Set the outpus on PORTD to 0, and enables pullup resistor for input 2
 	PORTB = 0;							//Set the outputs on PORTB to 0
 	PORTC = 0;							//Set the outpus on PORTC to 0
+
+	//---TWI Interface Setup---//
 
 	TWBR = calculate_twbr(100000);		//This is for communitcation with the clock. It wants a 100kHz TWI (two wire) interface.
 										//(continue) This calls the function at the top of the file.
 										//(continue) We tell it we want 100 000 Hz (the number in brackets) and it works out what value needs to go in the TWI bit-rate register to give us that.
 	twi::enable();						//This enables the TWI interface. This means that we can't use the 2 PORTC pins for anything other than TWI for now.
+
+
+	//---PWM Setup---//
+
+	//This sets the timer control registers for timer 1 to a 8bit PhaseCorrectPWM mode (see datasheet for more details)
+	TCCR1A |= _BV(WGM10);					//WGM10 = 1
+	TCCR1A &= ~_BV(WGM11);					//WGM11 = 0
+	TCCR1B &= ~(_BV(WGM13) | _BV(WGM12));	//WGM13 = 0, WGM12 = 0
+
+	//This sets the timer control registers to set OC1A on compare match up, and clear OC1A on compare match down
+	TCCR1A &= ~_BV(COM1A0);					//COM1A0 = 0
+	TCCR1A |= _BV(COM1A1);					//COM1A1 = 1
+
+	//This sets the output compare register 1A to 0 (brightness to 0)
+	OCR1A = 0;
+
+	//This gives the timer a clock source, with prescale 1
+	TCCR1B |= _BV(CS10);
+	TCCR1B &= ~(_BV(CS12) | _BV(CS11));
+
+	//---ADC Setup---//
+
+	//This selects the reference voltage to use. We are using AVCC (basically the source volatage)
+	ADMUX |= _BV(REFS0);	//REFS0 = 1
+	ADMUX &= ~_BV(REFS1);	//REFS1 = 0
+	
+	//This left shifts the result, since we only need 8 bit precision (default is 10)
+	ADMUX |= _BV(ADLAR);	//ADLAR = 1
+
+	//This selects what pin to use. We are using ADC0
+	ADMUX &= ~(_BV(MUX3) | _BV(MUX2) | _BV(MUX1) | _BV(MUX0));	//MUX3-0 = 0x00
+
+	//This enables the ADC (doesn't start a conversion though)
+	ADCSRA |= _BV(ADEN);	//ADEN = 1
 }
 
 //Remember, we always start the program at main (so start here)
 int main() {
 	sfr_init();							//Initialise special function registers (calls (goes to) the function just above this one)))
 
+	Button power;						//Create an instance of the button class called 'power'. We will use this as the power button. When referring to it, we will use 'power' in the code
+	button_defaultSetup(&power);		//Initialise the power button
+	power.data_port_p = &PIND;			//Power is located on PORTD
+	power.data_shift_portBit = 2;		//Power is located on PORTD2
+	button_update(&power);				//Call the button update function for power
+
 
 	IC_HD44780 disp;					//Create an instance of the C++ class IC_HD44780 (the chip that drives the display). This will allow us to interface with the display.
 										//(continue) We call our display 'disp', so when we want it we will use 'disp' in the code.
 
 	//These tell disp the pin data direction registers for the respective pins. This is so that when it needs to, the MCU can switch them between inputs and outputs.
-	disp.pin.ddr_data0 = &DDRD;
-	disp.pin.ddr_data1 = &DDRD;
-	disp.pin.ddr_data2 = &DDRD;
+	disp.pin.ddr_data0 = &DDRC;
+	disp.pin.ddr_data1 = &DDRC;
+	disp.pin.ddr_data2 = &DDRC;
 	disp.pin.ddr_data3 = &DDRD;
 	
 	//These tell disp the pin input registers for the respective pins. This is so that the MCU can read from the display data pins.
-	disp.pin.port_in_data0 = &PIND;
-	disp.pin.port_in_data1 = &PIND;
-	disp.pin.port_in_data2 = &PIND;
+	disp.pin.port_in_data0 = &PINC;
+	disp.pin.port_in_data1 = &PINC;
+	disp.pin.port_in_data2 = &PINC;
 	disp.pin.port_in_data3 = &PIND;
 
 	//These tell disp the pin output registers for the respective pins. This is so that the MCU can output to the display pins.
-	disp.pin.port_out_data0 = &PORTD;
-	disp.pin.port_out_data1 = &PORTD;
-	disp.pin.port_out_data2 = &PORTD;
+	disp.pin.port_out_data0 = &PORTC;
+	disp.pin.port_out_data1 = &PORTC;
+	disp.pin.port_out_data2 = &PORTC;
 	disp.pin.port_out_data3 = &PORTD;
 	disp.pin.port_out_rs = &PORTD;
 	disp.pin.port_out_rw = &PORTD;
 	disp.pin.port_out_en = &PORTD;
 	
 	//These tell disp the bits that the pins are located on the respective ports. EG data0 in located on PORTD-0, and since we set it to PORTD above we need to set it to 0 here.
-	disp.pin.shift_data0 = 0;
-	disp.pin.shift_data1 = 1;
-	disp.pin.shift_data2 = 2;
+	disp.pin.shift_data0 = 1;
+	disp.pin.shift_data1 = 2;
+	disp.pin.shift_data2 = 3;
 	disp.pin.shift_data3 = 3;
 	disp.pin.shift_rs = 4;
 	disp.pin.shift_en = 6;
@@ -144,7 +189,32 @@ int main() {
 	IC_DS1307::RegData regData_old;
 	while (true) {
 		//Start of the loop.
+
+		//---Power button---//
+		button_update(&power);					//Update the state of power (read it)
+		if (power.flag_state_released) {			//If power was pushed
+			//TODO: Proper power down... not a fake one :)
+			OCR1A = 0;							//Turn off brightness
+			disp << instr::display_power << display_power::display_off << display_power::cursorblink_off << display_power::cursor_off;	//Turn off display
+			while (true) {
+				button_update(&power);
+				if (power.flag_state_released) {
+					break;
+				}
+			}
+			disp << instr::display_power << display_power::display_on << display_power::cursorblink_on << display_power::cursor_on;	//Turn on display
+			regData_old.year1 = 9;				//Force it to update the display (by setting the year to 9x, it's bound to be different)
+		}
+
+
+		//---Brightness---//
+		ADCSRA |= _BV(ADSC);					//Start ADC conversion to get brightness
+		while (!(ADCSRA & _BV(ADIF)));			//Wait for conversion to finish
+		OCR1A = ADCH;							//Set brightness with read ADC value
+
+		//---Clock---//
 		clock.get_all();						//Update the clock.
+
 		if (clock.regData == regData_old)		//If regData and regData_old are the same
 			continue;							//Skip the rest of the loop, and start again (continue skips the rest of the loop)
 		regData_old = clock.regData;			//Copy the data over since there was a change

@@ -80,8 +80,7 @@ OBJDIR = .
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = tedavr/source/general.c tedavr/source/button.c
-#light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c
+SRC = light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c tedavr/source/general.c tedavr/source/button.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = source/$(TARGET).cpp source/ic_ds1307.cpp tedavr/source/ic_hd44780.cpp source/timer.cpp

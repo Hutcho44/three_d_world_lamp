@@ -91,7 +91,7 @@ int main() {
 	power.data_shift_portBit = 2;		//Power is located on PORTD2
 	button_update(&power);				//Call the button update function for power
 
-
+#ifdef DISPLAY_IMPLEMENT
 	IC_HD44780 disp;					//Create an instance of the C++ class IC_HD44780 (the chip that drives the display). This will allow us to interface with the display.
 										//(continue) We call our display 'disp', so when we want it we will use 'disp' in the code.
 
@@ -130,7 +130,6 @@ int main() {
 	//Note: So hd::instr::init_4bit means the display (hd) instruction (instr) to initialise to 4-bit mode (init_4bit)
 	//Note: 'using namespace *whatever*' allows us to not type the *whatever*. EG 'using namespace hd;' means that instead of typeing hd::instr::init_4bit, we can just type instr::init_4bit.
 	//Note: We use the display by doing 'disp << *what we want*'
-	cli();
 	using namespace hd;
 	disp << instr::init_4bit;							//Initalise the display to 4bit mode.
 														//(continue) This means that we only need 7 IO pins on out MCU, rather than 11
@@ -151,8 +150,7 @@ int main() {
 
 	//Clear the display
 	disp << instr::clear_display;
-	disp << "A";
-	sei();
+#endif
 	timer::init();
 	//Print "Hello! (newline) World!" to the display.
 	//disp << "Hello!\nWorld!";
@@ -211,8 +209,24 @@ int main() {
 	IC_DS1307::RegData regData_old;
 #endif
 	Timer timer;
-	timer = 1000;
+	timer = 1;
 	timer.start();
+	cRGB led[5];
+	led[0].r = 0xff;
+	led[0].g = 0x00;
+	led[0].b = 0x00;
+	led[1].r = 0x00;
+	led[1].g = 0xff;
+	led[1].b = 0x00;
+	led[2].r = 0x00;
+	led[2].g = 0x00;
+	led[2].b = 0xff;
+	led[3].r = 0xff;
+	led[3].g = 0xff;
+	led[3].b = 0x00;
+	led[4].r = 0xff;
+	led[4].g = 0x00;
+	led[4].b = 0xff;
 	while (true) {
 		//Start of the loop.
 
@@ -223,7 +237,9 @@ int main() {
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 #endif
 				OCR1A = 0;								//Turn off brightness
+#ifdef DISPLAY_IMPLEMENT
 				disp << instr::display_power << display_power::display_off << display_power::cursorblink_off << display_power::cursor_off;	//Turn off display
+#endif
 				twi::disable();
 				GICR |= _BV(INT0);						//Enable EXT INT0
 				set_sleep_mode(SLEEP_MODE_PWR_DOWN);	//Set the sleep mode to PWR down
@@ -241,7 +257,9 @@ int main() {
 						break;
 				}
 
+#ifdef DISPLAY_IMPLEMENT
 				disp << instr::display_power << display_power::display_on << display_power::cursorblink_on << display_power::cursor_on;		//Turn on display
+#endif DISPLAY_IMPLEMENT
 #ifdef DS1307_IMPLEMENT
 				regData_old.year1 = 9;				//Force it to update the display (by setting the year to 9x, it's bound to be different)
 #endif
@@ -255,6 +273,18 @@ int main() {
 		while (!(ADCSRA & _BV(ADIF)));			//Wait for conversion to finish
 		OCR1A = ADCH;							//Set brightness with read ADC value
 
+		if (timer) {
+			cRGB buf[4];
+			cRGB end = led[4];
+			memcpy(buf, led, sizeof(cRGB) * 4);
+			memcpy(led + 1, buf, sizeof(cRGB) * 4);
+			led[0] = end;
+			timer.reset();
+			timer = 50;
+			timer.start();
+		}
+		ws2812_setleds(led, 5);
+
 #ifdef DS1307_IMPLEMENT
 		//---Clock---//
 		clock.get_all();						//Update the clock.
@@ -264,14 +294,7 @@ int main() {
 		regData_old = clock.regData;			//Copy the data over since there was a change
 
 #endif
-		if (!timer) {
-			continue;
-		}
-		timer.reset();
-		timer = 1000;
-		timer.start();
 
-		disp << "B";
 
 #ifdef PRINT_TIME
 		switch (clock.regData.day) {			//We need to change the 'day' from a number into a readable text string.

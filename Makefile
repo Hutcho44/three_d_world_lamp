@@ -80,11 +80,11 @@ OBJDIR = .
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c tedavr/source/general.c tedavr/source/button.c
-
+SRC = tedavr/source/general.c tedavr/source/button.c
+#light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = source/$(TARGET).cpp source/ic_ds1307.cpp tedavr/source/ic_hd44780.cpp
+CPPSRC = source/$(TARGET).cpp source/ic_ds1307.cpp tedavr/source/ic_hd44780.cpp source/timer.cpp
 
 
 # List Assembler source files here.
@@ -183,7 +183,7 @@ CPPFLAGS += -fshort-enums
 CPPFLAGS += -fno-exceptions
 CPPFLAGS += -Wall
 CPPFLAGS += -Wundef
-CPPFLAGS += -std=c++11
+CPPFLAGS += -std=c++14
 #CPPFLAGS += -mshort-calls
 #CPPFLAGS += -fno-unit-at-a-time
 #CPPFLAGS += -Wstrict-prototypes

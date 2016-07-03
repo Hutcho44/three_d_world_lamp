@@ -1,0 +1,752 @@
+   1               		.file	"ds18b20.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	ds18b20_reset
+  12               	ds18b20_reset:
+  13               	.LFB6:
+  14               		.file 1 "avr_lib_ds18b20_02/src/ds18b20/ds18b20.c"
+   1:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+   2:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** ds18b20 lib 0x02
+   3:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+   4:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** copyright (c) Davide Gironi, 2012
+   5:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+   6:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** Released under GPLv3.
+   7:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** Please refer to LICENSE file for licensing information.
+   8:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** */
+   9:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  10:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** #include <avr/io.h>
+  11:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** #include <util/delay.h>
+  12:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** #include <avr/interrupt.h>
+  13:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  14:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** #include "ds18b20.h"
+  15:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  16:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+  17:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * ds18b20 init
+  18:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+  19:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** uint8_t ds18b20_reset() {
+  15               		.loc 1 19 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  20:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t i;
+  21:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  22:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//low for 480us
+  23:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_PORT &= ~ (1<<DS18B20_DQ); //low
+  21               		.loc 1 23 0
+  22 0000 C298      		cbi 0x18,2
+  24:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR |= (1<<DS18B20_DQ); //output
+  23               		.loc 1 24 0
+  24 0002 BA9A      		sbi 0x17,2
+  25               	.LVL0:
+  26               	.LBB18:
+  27               	.LBB19:
+  28               		.file 2 "c:\\winavr-20100110\\avr\\include\\util\\delay.h"
+   1:c:\winavr-20100110\avr\include\util\delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:c:\winavr-20100110\avr\include\util\delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:c:\winavr-20100110\avr\include\util\delay.h ****    All rights reserved.
+   5:c:\winavr-20100110\avr\include\util\delay.h **** 
+   6:c:\winavr-20100110\avr\include\util\delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:c:\winavr-20100110\avr\include\util\delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:c:\winavr-20100110\avr\include\util\delay.h **** 
+   9:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions of source code must retain the above copyright
+  10:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:c:\winavr-20100110\avr\include\util\delay.h **** 
+  12:c:\winavr-20100110\avr\include\util\delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:c:\winavr-20100110\avr\include\util\delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:c:\winavr-20100110\avr\include\util\delay.h ****      the documentation and/or other materials provided with the
+  15:c:\winavr-20100110\avr\include\util\delay.h ****      distribution.
+  16:c:\winavr-20100110\avr\include\util\delay.h **** 
+  17:c:\winavr-20100110\avr\include\util\delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:c:\winavr-20100110\avr\include\util\delay.h ****      contributors may be used to endorse or promote products derived
+  19:c:\winavr-20100110\avr\include\util\delay.h ****      from this software without specific prior written permission.
+  20:c:\winavr-20100110\avr\include\util\delay.h **** 
+  21:c:\winavr-20100110\avr\include\util\delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:c:\winavr-20100110\avr\include\util\delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:c:\winavr-20100110\avr\include\util\delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:c:\winavr-20100110\avr\include\util\delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:c:\winavr-20100110\avr\include\util\delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:c:\winavr-20100110\avr\include\util\delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:c:\winavr-20100110\avr\include\util\delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:c:\winavr-20100110\avr\include\util\delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:c:\winavr-20100110\avr\include\util\delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:c:\winavr-20100110\avr\include\util\delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:c:\winavr-20100110\avr\include\util\delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:c:\winavr-20100110\avr\include\util\delay.h **** 
+  33:c:\winavr-20100110\avr\include\util\delay.h **** /* $Id: delay.h.in 2385 2013-05-03 13:14:20Z joerg_wunsch $ */
+  34:c:\winavr-20100110\avr\include\util\delay.h **** 
+  35:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef _UTIL_DELAY_H_
+  36:c:\winavr-20100110\avr\include\util\delay.h **** #define _UTIL_DELAY_H_ 1
+  37:c:\winavr-20100110\avr\include\util\delay.h **** 
+  38:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:c:\winavr-20100110\avr\include\util\delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  41:c:\winavr-20100110\avr\include\util\delay.h **** 
+  42:c:\winavr-20100110\avr\include\util\delay.h **** #include <inttypes.h>
+  43:c:\winavr-20100110\avr\include\util\delay.h **** #include <util/delay_basic.h>
+  44:c:\winavr-20100110\avr\include\util\delay.h **** #include <math.h>
+  45:c:\winavr-20100110\avr\include\util\delay.h **** 
+  46:c:\winavr-20100110\avr\include\util\delay.h **** /** \file */
+  47:c:\winavr-20100110\avr\include\util\delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:c:\winavr-20100110\avr\include\util\delay.h ****     \code
+  49:c:\winavr-20100110\avr\include\util\delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:c:\winavr-20100110\avr\include\util\delay.h ****     //#define F_CPU 14.7456E6
+  51:c:\winavr-20100110\avr\include\util\delay.h ****     #include <util/delay.h>
+  52:c:\winavr-20100110\avr\include\util\delay.h ****     \endcode
+  53:c:\winavr-20100110\avr\include\util\delay.h **** 
+  54:c:\winavr-20100110\avr\include\util\delay.h ****     \note As an alternative method, it is possible to pass the
+  55:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:c:\winavr-20100110\avr\include\util\delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:c:\winavr-20100110\avr\include\util\delay.h ****     used.
+  58:c:\winavr-20100110\avr\include\util\delay.h **** 
+  59:c:\winavr-20100110\avr\include\util\delay.h ****     The functions in this header file are wrappers around the basic
+  60:c:\winavr-20100110\avr\include\util\delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:c:\winavr-20100110\avr\include\util\delay.h ****     convenience functions where actual time values can be specified
+  62:c:\winavr-20100110\avr\include\util\delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:c:\winavr-20100110\avr\include\util\delay.h ****     that compile-time constant expressions will be eliminated by
+  64:c:\winavr-20100110\avr\include\util\delay.h ****     compiler optimization so floating-point expressions can be used
+  65:c:\winavr-20100110\avr\include\util\delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:c:\winavr-20100110\avr\include\util\delay.h ****     frequency passed by the macro F_CPU.
+  67:c:\winavr-20100110\avr\include\util\delay.h **** 
+  68:c:\winavr-20100110\avr\include\util\delay.h ****     \note In order for these functions to work as intended, compiler
+  69:c:\winavr-20100110\avr\include\util\delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:c:\winavr-20100110\avr\include\util\delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:c:\winavr-20100110\avr\include\util\delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:c:\winavr-20100110\avr\include\util\delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:c:\winavr-20100110\avr\include\util\delay.h ****     applications that otherwise do not use floating-point calculations
+  74:c:\winavr-20100110\avr\include\util\delay.h ****     will experience severe code bloat by the floating-point library
+  75:c:\winavr-20100110\avr\include\util\delay.h ****     routines linked into the application.
+  76:c:\winavr-20100110\avr\include\util\delay.h **** 
+  77:c:\winavr-20100110\avr\include\util\delay.h ****     The functions available allow the specification of microsecond, and
+  78:c:\winavr-20100110\avr\include\util\delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:c:\winavr-20100110\avr\include\util\delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:c:\winavr-20100110\avr\include\util\delay.h **** 
+  81:c:\winavr-20100110\avr\include\util\delay.h **** */
+  82:c:\winavr-20100110\avr\include\util\delay.h **** 
+  83:c:\winavr-20100110\avr\include\util\delay.h **** #if !defined(__DOXYGEN__)
+  84:c:\winavr-20100110\avr\include\util\delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:c:\winavr-20100110\avr\include\util\delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  87:c:\winavr-20100110\avr\include\util\delay.h **** 
+  88:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef F_CPU
+  89:c:\winavr-20100110\avr\include\util\delay.h **** /* prevent compiler error by supplying a default */
+  90:c:\winavr-20100110\avr\include\util\delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:c:\winavr-20100110\avr\include\util\delay.h **** # define F_CPU 1000000UL
+  92:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  93:c:\winavr-20100110\avr\include\util\delay.h **** 
+  94:c:\winavr-20100110\avr\include\util\delay.h **** #ifndef __OPTIMIZE__
+  95:c:\winavr-20100110\avr\include\util\delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+  97:c:\winavr-20100110\avr\include\util\delay.h **** 
+  98:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 101:c:\winavr-20100110\avr\include\util\delay.h **** #  include <math.h>
+ 102:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 103:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 104:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 105:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 106:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 107:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 109:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 112:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 114:c:\winavr-20100110\avr\include\util\delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:c:\winavr-20100110\avr\include\util\delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:c:\winavr-20100110\avr\include\util\delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:c:\winavr-20100110\avr\include\util\delay.h ****    user will not be informed about decreased resolution.
+ 119:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 120:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0ms.
+ 124:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 125:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:c:\winavr-20100110\avr\include\util\delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:c:\winavr-20100110\avr\include\util\delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 129:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:c:\winavr-20100110\avr\include\util\delay.h ****    to round down and round to closest integer.
+ 131:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 132:c:\winavr-20100110\avr\include\util\delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:c:\winavr-20100110\avr\include\util\delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:c:\winavr-20100110\avr\include\util\delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:c:\winavr-20100110\avr\include\util\delay.h ****    Also, the backward compatible
+ 136:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:c:\winavr-20100110\avr\include\util\delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:c:\winavr-20100110\avr\include\util\delay.h ****    required for rounding are not available to the compiler then.
+ 139:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 140:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 141:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 142:c:\winavr-20100110\avr\include\util\delay.h **** _delay_ms(double __ms)
+ 143:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 144:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ; 
+ 145:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 148:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 149:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 152:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 155:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 158:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 159:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 160:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 162:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 163:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 164:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 165:c:\winavr-20100110\avr\include\util\delay.h **** #else
+ 166:c:\winavr-20100110\avr\include\util\delay.h **** 	uint16_t __ticks;
+ 167:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 168:c:\winavr-20100110\avr\include\util\delay.h **** 	if (__tmp < 1.0)
+ 169:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = 1;
+ 170:c:\winavr-20100110\avr\include\util\delay.h **** 	else if (__tmp > 65535)
+ 171:c:\winavr-20100110\avr\include\util\delay.h **** 	{
+ 172:c:\winavr-20100110\avr\include\util\delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 173:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 174:c:\winavr-20100110\avr\include\util\delay.h **** 		while(__ticks)
+ 175:c:\winavr-20100110\avr\include\util\delay.h **** 		{
+ 176:c:\winavr-20100110\avr\include\util\delay.h **** 			// wait 1/10 ms
+ 177:c:\winavr-20100110\avr\include\util\delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 178:c:\winavr-20100110\avr\include\util\delay.h **** 			__ticks --;
+ 179:c:\winavr-20100110\avr\include\util\delay.h **** 		}
+ 180:c:\winavr-20100110\avr\include\util\delay.h **** 		return;
+ 181:c:\winavr-20100110\avr\include\util\delay.h **** 	}
+ 182:c:\winavr-20100110\avr\include\util\delay.h **** 	else
+ 183:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks = (uint16_t)__tmp;
+ 184:c:\winavr-20100110\avr\include\util\delay.h **** 	_delay_loop_2(__ticks);
+ 185:c:\winavr-20100110\avr\include\util\delay.h **** #endif
+ 186:c:\winavr-20100110\avr\include\util\delay.h **** }
+ 187:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 188:c:\winavr-20100110\avr\include\util\delay.h **** /**
+ 189:c:\winavr-20100110\avr\include\util\delay.h ****    \ingroup util_delay
+ 190:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 191:c:\winavr-20100110\avr\include\util\delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 192:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 193:c:\winavr-20100110\avr\include\util\delay.h ****    The macro F_CPU is supposed to be defined to a
+ 194:c:\winavr-20100110\avr\include\util\delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 195:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 196:c:\winavr-20100110\avr\include\util\delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 197:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 198:c:\winavr-20100110\avr\include\util\delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 199:c:\winavr-20100110\avr\include\util\delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 200:c:\winavr-20100110\avr\include\util\delay.h ****    will not be informed about this case.
+ 201:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 202:c:\winavr-20100110\avr\include\util\delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 203:c:\winavr-20100110\avr\include\util\delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 204:c:\winavr-20100110\avr\include\util\delay.h ****    values greater than the maximal possible delay, overflow results in
+ 205:c:\winavr-20100110\avr\include\util\delay.h ****    no delay i.e., 0us.
+ 206:c:\winavr-20100110\avr\include\util\delay.h ****   
+ 207:c:\winavr-20100110\avr\include\util\delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 208:c:\winavr-20100110\avr\include\util\delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 209:c:\winavr-20100110\avr\include\util\delay.h ****    the user gets atleast __us microseconds of delay.
+ 210:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 211:c:\winavr-20100110\avr\include\util\delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 212:c:\winavr-20100110\avr\include\util\delay.h ****    to round down and round to closest integer.
+ 213:c:\winavr-20100110\avr\include\util\delay.h ****  
+ 214:c:\winavr-20100110\avr\include\util\delay.h ****    Note: The new implementation of _delay_us(double __us) with 
+ 215:c:\winavr-20100110\avr\include\util\delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible.
+ 216:c:\winavr-20100110\avr\include\util\delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 217:c:\winavr-20100110\avr\include\util\delay.h ****    Also, the backward compatible
+ 218:c:\winavr-20100110\avr\include\util\delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 219:c:\winavr-20100110\avr\include\util\delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 220:c:\winavr-20100110\avr\include\util\delay.h ****    required for rounding are not available to the compiler then.
+ 221:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 222:c:\winavr-20100110\avr\include\util\delay.h ****  */
+ 223:c:\winavr-20100110\avr\include\util\delay.h **** void
+ 224:c:\winavr-20100110\avr\include\util\delay.h **** _delay_us(double __us)
+ 225:c:\winavr-20100110\avr\include\util\delay.h **** {
+ 226:c:\winavr-20100110\avr\include\util\delay.h **** 	double __tmp ; 
+ 227:c:\winavr-20100110\avr\include\util\delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 228:c:\winavr-20100110\avr\include\util\delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 229:c:\winavr-20100110\avr\include\util\delay.h ****   __STDC_HOSTED__
+ 230:c:\winavr-20100110\avr\include\util\delay.h **** 	uint32_t __ticks_dc;
+ 231:c:\winavr-20100110\avr\include\util\delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 232:c:\winavr-20100110\avr\include\util\delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 233:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 234:c:\winavr-20100110\avr\include\util\delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 235:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 236:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 237:c:\winavr-20100110\avr\include\util\delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 238:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 239:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 240:c:\winavr-20100110\avr\include\util\delay.h **** 	#else
+ 241:c:\winavr-20100110\avr\include\util\delay.h **** 		//round up by default
+ 242:c:\winavr-20100110\avr\include\util\delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 243:c:\winavr-20100110\avr\include\util\delay.h **** 	#endif
+ 244:c:\winavr-20100110\avr\include\util\delay.h **** 
+ 245:c:\winavr-20100110\avr\include\util\delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+  29               		.loc 2 245 0
+  30 0004 8FEB      		ldi r24,lo8(959)
+  31 0006 93E0      		ldi r25,hi8(959)
+  32 0008 0197      		1: sbiw r24,1
+  33 000a 01F4      		brne 1b
+  34 000c 00C0      		rjmp .
+  35 000e 0000      		nop
+  36               	.LBE19:
+  37               	.LBE18:
+  25:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(480);
+  26:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  27:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//release line and wait for 60uS
+  28:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR &= ~(1<<DS18B20_DQ); //input
+  38               		.loc 1 28 0
+  39 0010 BA98      		cbi 0x17,2
+  40               	.LVL1:
+  41               	.LBB20:
+  42               	.LBB21:
+  43               		.loc 2 245 0
+  44 0012 90EA      		ldi r25,lo8(-96)
+  45 0014 9A95      		1: dec r25
+  46 0016 01F4      		brne 1b
+  47               	.LBE21:
+  48               	.LBE20:
+  29:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(60);
+  30:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  31:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//get value and wait 420us
+  32:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	i = (DS18B20_PIN & (1<<DS18B20_DQ));
+  49               		.loc 1 32 0
+  50 0018 86B3      		in r24,0x16
+  51               	.LVL2:
+  52               	.LBB22:
+  53               	.LBB23:
+  54               		.loc 2 245 0
+  55 001a E7E4      		ldi r30,lo8(839)
+  56 001c F3E0      		ldi r31,hi8(839)
+  57 001e 3197      		1: sbiw r30,1
+  58 0020 01F4      		brne 1b
+  59 0022 00C0      		rjmp .
+  60 0024 0000      		nop
+  61               	.LBE23:
+  62               	.LBE22:
+  33:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(420);
+  34:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  35:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//return the read value, 0=ok, 1=error
+  36:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	return i;
+  37:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+  63               		.loc 1 37 0
+  64 0026 8470      		andi r24,lo8(4)
+  65               	.LVL3:
+  66 0028 0895      		ret
+  67               		.cfi_endproc
+  68               	.LFE6:
+  70               	.global	ds18b20_writebit
+  72               	ds18b20_writebit:
+  73               	.LFB7:
+  38:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  39:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+  40:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * write one bit
+  41:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+  42:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** void ds18b20_writebit(uint8_t bit){
+  74               		.loc 1 42 0
+  75               		.cfi_startproc
+  76               	.LVL4:
+  77               	/* prologue: function */
+  78               	/* frame size = 0 */
+  79               	/* stack size = 0 */
+  80               	.L__stack_usage = 0
+  43:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//low for 1uS
+  44:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_PORT &= ~ (1<<DS18B20_DQ); //low
+  81               		.loc 1 44 0
+  82 002a C298      		cbi 0x18,2
+  45:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR |= (1<<DS18B20_DQ); //output
+  83               		.loc 1 45 0
+  84 002c BA9A      		sbi 0x17,2
+  85               	.LVL5:
+  86               	.LBB24:
+  87               	.LBB25:
+  88               		.loc 2 245 0
+  89 002e 92E0      		ldi r25,lo8(2)
+  90 0030 9A95      		1: dec r25
+  91 0032 01F4      		brne 1b
+  92 0034 00C0      		rjmp .
+  93               	.LBE25:
+  94               	.LBE24:
+  46:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(1);
+  47:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  48:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//if we want to write 1, release the line (if not will keep low)
+  49:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	if(bit)
+  95               		.loc 1 49 0
+  96 0036 8111      		cpse r24,__zero_reg__
+  50:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		DS18B20_DDR &= ~(1<<DS18B20_DQ); //input
+  97               		.loc 1 50 0
+  98 0038 BA98      		cbi 0x17,2
+  99               	.L3:
+ 100               	.LVL6:
+ 101               	.LBB26:
+ 102               	.LBB27:
+ 103               		.loc 2 245 0
+ 104 003a 80EA      		ldi r24,lo8(-96)
+ 105 003c 8A95      		1: dec r24
+ 106 003e 01F4      		brne 1b
+ 107               	.LVL7:
+ 108               	.LBE27:
+ 109               	.LBE26:
+  51:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  52:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//wait 60uS and release the line
+  53:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(60);
+  54:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR &= ~(1<<DS18B20_DQ); //input
+ 110               		.loc 1 54 0
+ 111 0040 BA98      		cbi 0x17,2
+ 112 0042 0895      		ret
+ 113               		.cfi_endproc
+ 114               	.LFE7:
+ 116               	.global	ds18b20_readbit
+ 118               	ds18b20_readbit:
+ 119               	.LFB8:
+  55:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+  56:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  57:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+  58:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * read one bit
+  59:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+  60:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** uint8_t ds18b20_readbit(void){
+ 120               		.loc 1 60 0
+ 121               		.cfi_startproc
+ 122               	/* prologue: function */
+ 123               	/* frame size = 0 */
+ 124               	/* stack size = 0 */
+ 125               	.L__stack_usage = 0
+ 126               	.LVL8:
+  61:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t bit=0;
+  62:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  63:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//low for 1uS
+  64:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_PORT &= ~ (1<<DS18B20_DQ); //low
+ 127               		.loc 1 64 0
+ 128 0044 C298      		cbi 0x18,2
+  65:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR |= (1<<DS18B20_DQ); //output
+ 129               		.loc 1 65 0
+ 130 0046 BA9A      		sbi 0x17,2
+ 131               	.LVL9:
+ 132               	.LBB28:
+ 133               	.LBB29:
+ 134               		.loc 2 245 0
+ 135 0048 82E0      		ldi r24,lo8(2)
+ 136 004a 8A95      		1: dec r24
+ 137 004c 01F4      		brne 1b
+ 138 004e 00C0      		rjmp .
+ 139               	.LBE29:
+ 140               	.LBE28:
+  66:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(1);
+  67:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  68:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//release line and wait for 14uS
+  69:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	DS18B20_DDR &= ~(1<<DS18B20_DQ); //input
+ 141               		.loc 1 69 0
+ 142 0050 BA98      		cbi 0x17,2
+ 143               	.LVL10:
+ 144               	.LBB30:
+ 145               	.LBB31:
+ 146               		.loc 2 245 0
+ 147 0052 95E2      		ldi r25,lo8(37)
+ 148 0054 9A95      		1: dec r25
+ 149 0056 01F4      		brne 1b
+ 150 0058 0000      		nop
+ 151               	.LBE31:
+ 152               	.LBE30:
+  70:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(14);
+  71:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  72:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//read the value
+  73:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	if(DS18B20_PIN & (1<<DS18B20_DQ))
+ 153               		.loc 1 73 0
+ 154 005a 86B3      		in r24,0x16
+ 155               	.LVL11:
+ 156               	.LBB32:
+ 157               	.LBB33:
+ 158               		.loc 2 245 0
+ 159 005c 98E7      		ldi r25,lo8(120)
+ 160 005e 9A95      		1: dec r25
+ 161 0060 01F4      		brne 1b
+ 162               	.LBE33:
+ 163               	.LBE32:
+  74:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		bit=1;
+  75:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  76:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//wait 45uS and return read value
+  77:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	_delay_us(45);
+  78:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	return bit;
+  79:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+ 164               		.loc 1 79 0
+ 165 0062 82FB      		bst r24,2
+ 166 0064 8827      		clr r24
+ 167 0066 80F9      		bld r24,0
+ 168               	.LVL12:
+ 169 0068 0895      		ret
+ 170               		.cfi_endproc
+ 171               	.LFE8:
+ 173               	.global	ds18b20_writebyte
+ 175               	ds18b20_writebyte:
+ 176               	.LFB9:
+  80:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  81:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+  82:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * write one byte
+  83:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+  84:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** void ds18b20_writebyte(uint8_t byte){
+ 177               		.loc 1 84 0
+ 178               		.cfi_startproc
+ 179               	.LVL13:
+ 180 006a CF93      		push r28
+ 181               	.LCFI0:
+ 182               		.cfi_def_cfa_offset 3
+ 183               		.cfi_offset 28, -2
+ 184 006c DF93      		push r29
+ 185               	.LCFI1:
+ 186               		.cfi_def_cfa_offset 4
+ 187               		.cfi_offset 29, -3
+ 188               	/* prologue: function */
+ 189               	/* frame size = 0 */
+ 190               	/* stack size = 2 */
+ 191               	.L__stack_usage = 2
+ 192 006e D82F      		mov r29,r24
+ 193               	.LVL14:
+  85:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t i=8;
+  86:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	while(i--){
+ 194               		.loc 1 86 0
+ 195 0070 C9E0      		ldi r28,lo8(9)
+ 196               	.LVL15:
+ 197               	.L10:
+ 198 0072 C150      		subi r28,lo8(-(-1))
+ 199               	.LVL16:
+ 200 0074 01F0      		breq .L12
+ 201               	.LVL17:
+  87:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		ds18b20_writebit(byte&1);
+ 202               		.loc 1 87 0
+ 203 0076 8D2F      		mov r24,r29
+ 204 0078 8170      		andi r24,lo8(1)
+ 205 007a 00D0      		rcall ds18b20_writebit
+ 206               	.LVL18:
+  88:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		byte >>= 1;
+ 207               		.loc 1 88 0
+ 208 007c D695      		lsr r29
+ 209               	.LVL19:
+ 210 007e 00C0      		rjmp .L10
+ 211               	.LVL20:
+ 212               	.L12:
+ 213               	/* epilogue start */
+  89:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	}
+  90:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+ 214               		.loc 1 90 0
+ 215 0080 DF91      		pop r29
+ 216               	.LVL21:
+ 217 0082 CF91      		pop r28
+ 218               	.LVL22:
+ 219 0084 0895      		ret
+ 220               		.cfi_endproc
+ 221               	.LFE9:
+ 223               	.global	ds18b20_readbyte
+ 225               	ds18b20_readbyte:
+ 226               	.LFB10:
+  91:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+  92:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+  93:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * read one byte
+  94:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+  95:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** uint8_t ds18b20_readbyte(void){
+ 227               		.loc 1 95 0
+ 228               		.cfi_startproc
+ 229 0086 CF93      		push r28
+ 230               	.LCFI2:
+ 231               		.cfi_def_cfa_offset 3
+ 232               		.cfi_offset 28, -2
+ 233 0088 DF93      		push r29
+ 234               	.LCFI3:
+ 235               		.cfi_def_cfa_offset 4
+ 236               		.cfi_offset 29, -3
+ 237               	/* prologue: function */
+ 238               	/* frame size = 0 */
+ 239               	/* stack size = 2 */
+ 240               	.L__stack_usage = 2
+ 241               	.LVL23:
+  96:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t i=8, n=0;
+  97:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	while(i--){
+ 242               		.loc 1 97 0
+ 243 008a D9E0      		ldi r29,lo8(9)
+  96:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t i=8, n=0;
+ 244               		.loc 1 96 0
+ 245 008c C0E0      		ldi r28,0
+ 246               	.LVL24:
+ 247               	.L14:
+ 248 008e D150      		subi r29,lo8(-(-1))
+ 249               	.LVL25:
+ 250               		.loc 1 97 0
+ 251 0090 01F0      		breq .L16
+ 252               	.LVL26:
+  98:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		n >>= 1;
+  99:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		n |= (ds18b20_readbit()<<7);
+ 253               		.loc 1 99 0
+ 254 0092 00D0      		rcall ds18b20_readbit
+ 255               	.LVL27:
+ 256 0094 20E8      		ldi r18,lo8(-128)
+ 257 0096 829F      		mul r24,r18
+ 258 0098 C001      		movw r24,r0
+ 259 009a 1124      		clr __zero_reg__
+  98:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 		n >>= 1;
+ 260               		.loc 1 98 0
+ 261 009c C695      		lsr r28
+ 262               	.LVL28:
+ 263               		.loc 1 99 0
+ 264 009e C82B      		or r28,r24
+ 265               	.LVL29:
+ 266 00a0 00C0      		rjmp .L14
+ 267               	.LVL30:
+ 268               	.L16:
+ 100:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	}
+ 101:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	return n;
+ 102:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+ 269               		.loc 1 102 0
+ 270 00a2 8C2F      		mov r24,r28
+ 271               	/* epilogue start */
+ 272 00a4 DF91      		pop r29
+ 273               	.LVL31:
+ 274 00a6 CF91      		pop r28
+ 275               	.LVL32:
+ 276 00a8 0895      		ret
+ 277               		.cfi_endproc
+ 278               	.LFE10:
+ 280               	.global	__floatsisf
+ 281               	.global	__mulsf3
+ 282               	.global	ds18b20_gettemp
+ 284               	ds18b20_gettemp:
+ 285               	.LFB11:
+ 103:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 104:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** /*
+ 105:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  * get temperature
+ 106:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c ****  */
+ 107:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** double ds18b20_gettemp() {
+ 286               		.loc 1 107 0
+ 287               		.cfi_startproc
+ 288 00aa CF93      		push r28
+ 289               	.LCFI4:
+ 290               		.cfi_def_cfa_offset 3
+ 291               		.cfi_offset 28, -2
+ 292               	/* prologue: function */
+ 293               	/* frame size = 0 */
+ 294               	/* stack size = 1 */
+ 295               	.L__stack_usage = 1
+ 296               	.LVL33:
+ 108:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t temperature_l;
+ 109:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	uint8_t temperature_h;
+ 110:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	double retd = 0;
+ 111:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 112:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	#if DS18B20_STOPINTERRUPTONREAD == 1
+ 113:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	cli();
+ 114:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	#endif
+ 115:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 116:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_reset(); //reset
+ 297               		.loc 1 116 0
+ 298 00ac 00D0      		rcall ds18b20_reset
+ 299               	.LVL34:
+ 117:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_writebyte(DS18B20_CMD_SKIPROM); //skip ROM
+ 300               		.loc 1 117 0
+ 301 00ae 8CEC      		ldi r24,lo8(-52)
+ 302 00b0 00D0      		rcall ds18b20_writebyte
+ 303               	.LVL35:
+ 118:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_writebyte(DS18B20_CMD_CONVERTTEMP); //start temperature conversion
+ 304               		.loc 1 118 0
+ 305 00b2 84E4      		ldi r24,lo8(68)
+ 306 00b4 00D0      		rcall ds18b20_writebyte
+ 307               	.LVL36:
+ 308               	.L18:
+ 119:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 120:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	while(!ds18b20_readbit()); //wait until conversion is complete
+ 309               		.loc 1 120 0 discriminator 1
+ 310 00b6 00D0      		rcall ds18b20_readbit
+ 311               	.LVL37:
+ 312 00b8 8823      		tst r24
+ 313 00ba 01F0      		breq .L18
+ 121:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 122:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_reset(); //reset
+ 314               		.loc 1 122 0
+ 315 00bc 00D0      		rcall ds18b20_reset
+ 316               	.LVL38:
+ 123:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_writebyte(DS18B20_CMD_SKIPROM); //skip ROM
+ 317               		.loc 1 123 0
+ 318 00be 8CEC      		ldi r24,lo8(-52)
+ 319 00c0 00D0      		rcall ds18b20_writebyte
+ 320               	.LVL39:
+ 124:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	ds18b20_writebyte(DS18B20_CMD_RSCRATCHPAD); //read scratchpad
+ 321               		.loc 1 124 0
+ 322 00c2 8EEB      		ldi r24,lo8(-66)
+ 323 00c4 00D0      		rcall ds18b20_writebyte
+ 324               	.LVL40:
+ 125:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 126:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//read 2 byte from scratchpad
+ 127:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	temperature_l = ds18b20_readbyte();
+ 325               		.loc 1 127 0
+ 326 00c6 00D0      		rcall ds18b20_readbyte
+ 327               	.LVL41:
+ 328 00c8 C82F      		mov r28,r24
+ 329               	.LVL42:
+ 128:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	temperature_h = ds18b20_readbyte();
+ 330               		.loc 1 128 0
+ 331 00ca 00D0      		rcall ds18b20_readbyte
+ 332               	.LVL43:
+ 129:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 130:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	#if DS18B20_STOPINTERRUPTONREAD == 1
+ 131:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	sei();
+ 132:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	#endif
+ 133:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 134:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	//convert the 12 bit value obtained
+ 135:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	retd = ( ( temperature_h << 8 ) + temperature_l ) * 0.0625;
+ 333               		.loc 1 135 0
+ 334 00cc 682F      		mov r22,r24
+ 335 00ce 70E0      		ldi r23,0
+ 336 00d0 762F      		mov r23,r22
+ 337 00d2 6627      		clr r22
+ 338               	.LVL44:
+ 339 00d4 6C0F      		add r22,r28
+ 340 00d6 711D      		adc r23,__zero_reg__
+ 341 00d8 8827      		clr r24
+ 342 00da 77FD      		sbrc r23,7
+ 343 00dc 8095      		com r24
+ 344 00de 982F      		mov r25,r24
+ 345 00e0 00D0      		rcall __floatsisf
+ 346               	.LVL45:
+ 347 00e2 20E0      		ldi r18,0
+ 348 00e4 30E0      		ldi r19,0
+ 349 00e6 40E8      		ldi r20,lo8(-128)
+ 350 00e8 5DE3      		ldi r21,lo8(61)
+ 351 00ea 00D0      		rcall __mulsf3
+ 352               	.LVL46:
+ 353               	/* epilogue start */
+ 136:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 
+ 137:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** 	return retd;
+ 138:avr_lib_ds18b20_02/src/ds18b20/ds18b20.c **** }
+ 354               		.loc 1 138 0
+ 355 00ec CF91      		pop r28
+ 356               	.LVL47:
+ 357 00ee 0895      		ret
+ 358               		.cfi_endproc
+ 359               	.LFE11:
+ 361               	.Letext0:
+ 362               		.file 3 "c:\\winavr-20100110\\avr\\include\\stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 ds18b20.c
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:2      *ABS*:0000003e __SP_H__
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:3      *ABS*:0000003d __SP_L__
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:4      *ABS*:0000003f __SREG__
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:12     .text:00000000 ds18b20_reset
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:72     .text:0000002a ds18b20_writebit
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:118    .text:00000044 ds18b20_readbit
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:175    .text:0000006a ds18b20_writebyte
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:225    .text:00000086 ds18b20_readbyte
+C:\Users\teddy\AppData\Local\Temp\cc5X7M3v.s:284    .text:000000aa ds18b20_gettemp
+
+UNDEFINED SYMBOLS
+__floatsisf
+__mulsf3

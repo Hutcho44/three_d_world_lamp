@@ -182,7 +182,7 @@ CPPFLAGS += -fshort-enums
 CPPFLAGS += -fno-exceptions
 CPPFLAGS += -Wall
 CPPFLAGS += -Wundef
-CPPFLAGS += -std=c++14
+CPPFLAGS += -std=c++11
 #CPPFLAGS += -mshort-calls
 #CPPFLAGS += -fno-unit-at-a-time
 #CPPFLAGS += -Wstrict-prototypes

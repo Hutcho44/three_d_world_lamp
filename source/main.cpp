@@ -7,6 +7,7 @@
 #include "../tedavr/include/tedavr/button.h"								//Include button functions
 #include "../include/ic_ds1307.h"											//Include clock class
 #include "../include/timer.h"
+#include "../include/colour.h"
 #include "../light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.h"		//Include ws2812 (neopixel) functions (not written by Teddy)
 
 #ifndef __INTELLISENSE__
@@ -14,7 +15,7 @@
 #endif
 
 //#define DS1307_IMPLEMENT
-#//define PRINT_TIME
+//define PRINT_TIME
 
 EMPTY_INTERRUPT(INT0_vect);	//Used to wake the device from sleep mode
 
@@ -27,12 +28,12 @@ constexpr uint8_t calculate_twbr(float const scl_freq, float const prescale = 1,
 void sfr_init() {
 	//---Inputs/Output Setup---//
 
-	DDRD = 0b11111011;					//Set all 8 PORTD pins to outputs
+	DDRD = 0b11111011;					//Input for power button
 	DDRB = 0b11111111;					//Set all 8 PORTD pins to outputs
-	DDRC = 0b001111;					//Sets two PORTC pins to inputs (the the clock), and the rest to outputs (PORTC only has 6 pins)
+	DDRC = 0b000010;					//Sets two PORTC pins to inputs (the the clock), and the two genertic inputs, and the brightness pot.
 	PORTD = 0b00000100;					//Set the outpus on PORTD to 0, and enables pullup resistor for input 2
 	PORTB = 0;							//Set the outputs on PORTB to 0
-	PORTC = 0;							//Set the outpus on PORTC to 0
+	PORTC = 0b001100;					//Enable pullup resistors for the two genertic inputs
 
 	//---TWI Interface Setup---//
 
@@ -44,21 +45,29 @@ void sfr_init() {
 
 	//---PWM Setup---//
 
-	//This sets the timer control registers for timer 1 to a 8bit PhaseCorrectPWM mode (see datasheet for more details)
-	TCCR1A |= _BV(WGM10);					//WGM10 = 1
-	TCCR1A &= ~_BV(WGM11);					//WGM11 = 0
-	TCCR1B &= ~(_BV(WGM13) | _BV(WGM12));	//WGM13 = 0, WGM12 = 0
+	//Phase correct PWM (8bit)
+	TCCR0A |= _BV(WGM00);
+	TCCR0A &= ~_BV(WGM01);
+	TCCR0B &= ~_BV(WGM02);
 
-	//This sets the timer control registers to set OC1A on compare match up, and clear OC1A on compare match down
-	TCCR1A &= ~_BV(COM1A0);					//COM1A0 = 0
-	TCCR1A |= _BV(COM1A1);					//COM1A1 = 1
+	//Display
+	//Clear on compare match up, set on compare match down
+	TCCR0A &= ~_BV(COM0A0);
+	TCCR0A |= _BV(COM0A1);
 
-	//This sets the output compare register 1A to 0 (brightness to 0)
-	OCR1A = 0;
+	//Power LED
+	//Clear on compare match up, set on compare match down
+	TCCR0A &= ~_BV(COM0B0);
+	TCCR0A |= _BV(COM0B1);
+
+	//Display brightness to 0
+	OCR0A = 0;
+	//Power LED brightness to 0
+	OCR0B = 0;
 
 	//This gives the timer a clock source, with prescale 1
-	TCCR1B |= _BV(CS10);
-	TCCR1B &= ~(_BV(CS12) | _BV(CS11));
+	TCCR0B |= _BV(CS00);
+	TCCR0B &= ~(_BV(CS02) | _BV(CS01));
 
 	//---ADC Setup---//
 
@@ -77,7 +86,7 @@ void sfr_init() {
 
 	//---External Interrupt Setup (used for waking from low power mode)---//
 	//ATmega8 specifc stuf here
-	MCUCR &= ~(_BV(ISC01) | _BV(ISC00));	//Interrput on low
+	EICRA &= ~(_BV(ISC01) | _BV(ISC00));	//Interrput on low
 	sei();									//Enable interrupts
 }
 
@@ -91,39 +100,38 @@ int main() {
 	power.data_shift_portBit = 2;		//Power is located on PORTD2
 	button_update(&power);				//Call the button update function for power
 
-#ifdef DISPLAY_IMPLEMENT
 	IC_HD44780 disp;					//Create an instance of the C++ class IC_HD44780 (the chip that drives the display). This will allow us to interface with the display.
 										//(continue) We call our display 'disp', so when we want it we will use 'disp' in the code.
 
 	//These tell disp the pin data direction registers for the respective pins. This is so that when it needs to, the MCU can switch them between inputs and outputs.
-	disp.pin.ddr_data0 = &DDRC;
-	disp.pin.ddr_data1 = &DDRC;
-	disp.pin.ddr_data2 = &DDRC;
-	disp.pin.ddr_data3 = &DDRD;
+	disp.pin.ddr_data0 = &DDRB;
+	disp.pin.ddr_data1 = &DDRB;
+	disp.pin.ddr_data2 = &DDRB;
+	disp.pin.ddr_data3 = &DDRB;
 	
 	//These tell disp the pin input registers for the respective pins. This is so that the MCU can read from the display data pins.
-	disp.pin.port_in_data0 = &PINC;
-	disp.pin.port_in_data1 = &PINC;
-	disp.pin.port_in_data2 = &PINC;
-	disp.pin.port_in_data3 = &PIND;
+	disp.pin.port_in_data0 = &PINB;
+	disp.pin.port_in_data1 = &PINB;
+	disp.pin.port_in_data2 = &PINB;
+	disp.pin.port_in_data3 = &PINB;
 
 	//These tell disp the pin output registers for the respective pins. This is so that the MCU can output to the display pins.
-	disp.pin.port_out_data0 = &PORTC;
-	disp.pin.port_out_data1 = &PORTC;
-	disp.pin.port_out_data2 = &PORTC;
-	disp.pin.port_out_data3 = &PORTD;
+	disp.pin.port_out_data0 = &PORTB;
+	disp.pin.port_out_data1 = &PORTB;
+	disp.pin.port_out_data2 = &PORTB;
+	disp.pin.port_out_data3 = &PORTB;
 	disp.pin.port_out_rs = &PORTD;
 	disp.pin.port_out_rw = &PORTD;
 	disp.pin.port_out_en = &PORTD;
 	
 	//These tell disp the bits that the pins are located on the respective ports. EG data0 in located on PORTD-0, and since we set it to PORTD above we need to set it to 0 here.
-	disp.pin.shift_data0 = 1;
-	disp.pin.shift_data1 = 2;
-	disp.pin.shift_data2 = 3;
-	disp.pin.shift_data3 = 3;
-	disp.pin.shift_rs = 4;
-	disp.pin.shift_en = 6;
-	disp.pin.shift_rw = 5;
+	disp.pin.shift_data0 = 0;
+	disp.pin.shift_data1 = 3;
+	disp.pin.shift_data2 = 4;
+	disp.pin.shift_data3 = 5;
+	disp.pin.shift_rs = 3;
+	disp.pin.shift_en = 7;
+	disp.pin.shift_rw = 4;
 
 	//Note: 'instr' is short for instruction
 	//Note: The scope resolution operator '::' allows us to access the things 'inside' the name on the left. EG instr::*whatever* allows us to access the things in instr.
@@ -141,8 +149,8 @@ int main() {
 
 	disp << instr::display_power;						//Next we do the display power instruction
 	disp << display_power::display_on;					//Turn display on
-	disp << display_power::cursor_on;					//Turn cusor on (part of display power instruction)
-	disp << display_power::cursorblink_on;				//Turnon cursor blinking (part of display power instruction)
+	disp << display_power::cursor_off;					//Turn cusor on (part of display power instruction)
+	disp << display_power::cursorblink_off;				//Turnon cursor blinking (part of display power instruction)
 
 	//We don't have to do things one after the other. We can chain the instructions and values by just adding a '<<'
 	//This is the instruction to set the entry mode, we want it so that the cursor moves right, and we don't want the display to shift with it.
@@ -150,83 +158,31 @@ int main() {
 
 	//Clear the display
 	disp << instr::clear_display;
-#endif
-	timer::init();
-	//Print "Hello! (newline) World!" to the display.
-	//disp << "Hello!\nWorld!";
 
-	//Note: We could have chained all of that:
-	//disp << instr::init_4bit << instr::function_set << function_set::datalength_4 << function_set::font_5x8 << function_set::lines_2 << instr::display_power << display_power::display_on << display_power::cursor_on << display_power::cursorblink_on << instr::entry_mode_set << entry_mode_set::cursormove_right << entry_mode_set::displayshift_disable << instr::clear_display << "Waaaaat too\nLooooooooooooong";
-	//But why would we do that? ;)
+	timer::init(0.001);
 	
-#ifdef DS1307_IMPLEMENT
 	IC_DS1307 clock;	//Create an instance of a DS1307 real-time-clock (the real-time-clock that we are using)
 						//(continue) We call it clock, so from now on we will use 'clock' to refer to it.
 	//This one is easier to use. All we need to do is call the clock function 'get_all'. This is done using the '.' operator to access the function within the clock object.
 	clock.get_all();
 	char day_string[4];
 	char time_string[(16 * 2) + 2];	//Create a character array that's (16*2)+1 characters long. This is because each line of the display is 16 characters, and we have 2 lines. The +2 for the newline character '\n' and the terminating character '\0'
-#ifdef PRINT_TIME1
-	//Now the time is stored in 'clock'. Inside clock there is a data stucture (a collection of data) called 'regData' (short for register data) that the time is stored in.
-	//To access regData, we use the '.' operator. To access the contents of regData, we also use the '.' operator.
-	clock.regData.second0;	//This is the seconds '1s' digit (see ds_1307.h (a file, look for it in the GitHub repository) for more information on all the different values)
-	//^^^ But that's pointless. We need to do something with it. We'll use an alternative to the printf function to write the data to an array of char's that can be outputted to the display.
-	//I'll explain more about that when I see you.
-	switch (clock.regData.day) {
-	case(1):
-		strcpy(day_string, "Sun");
-		break;
-	case(2):
-		strcpy(day_string, "Mon");
-		break;
-	case(3):
-		strcpy(day_string, "Tue");
-		break;
-	case(4):
-		strcpy(day_string, "Wed");
-		break;
-	case(5):
-		strcpy(day_string, "Thu");
-		break;
-	case(6):
-		strcpy(day_string, "Fri");
-		break;
-	case(7):
-		strcpy(day_string, "Sat");
-		break;
-	default:
-		break;
-	}
-	sprintf(time_string, "%u%u:%u%u:%u%u%s\n%s %u%u/%u%u/20%u%u", clock.regData.hour1, clock.regData.hour0, clock.regData.minute1, clock.regData.minute0, clock.regData.second1, clock.regData.second0, clock.regData.ampm_hour1 ? "PM" : "AM",
-		day_string, clock.regData.date1, clock.regData.date0, clock.regData.month1, clock.regData.month0, clock.regData.year1, clock.regData.year0);
-	//That filled 'time_string' with a time string like the following: hh/mm/ss/AMPM (newline) day dd/mm/yyyy
-	disp << time_string;	//Output the time to the display
-#endif
+
 	//That's all good, but it only happens once. So we put it in a loop (and we would get rid of the above, because we don't need it twice. But we'll keep it for educational purposes)
 	//while (true) means it will loop forever, since true is always true
 	//We create a new regData called 'regData_old'. We use this to compare whether there has been a change in the time since the last loop.
 	//If there is a change, we re-write the time to the display. If we hadn't done that, it would re-write the time every loop, which sort of looks strange on the display.
 	IC_DS1307::RegData regData_old;
-#endif
+
+	constexpr float led_offset = 360 / 15;	//Increase this for less 
+	cRGB led[5];
+	float hue[5] = { 0, 1 * led_offset, 2 * led_offset, 3 * led_offset, 4 * led_offset };
+	float brightness = 0;
+	
 	Timer timer;
 	timer = 1;
 	timer.start();
-	cRGB led[5];
-	led[0].r = 0xff;
-	led[0].g = 0x00;
-	led[0].b = 0x00;
-	led[1].r = 0x00;
-	led[1].g = 0xff;
-	led[1].b = 0x00;
-	led[2].r = 0x00;
-	led[2].g = 0x00;
-	led[2].b = 0xff;
-	led[3].r = 0xff;
-	led[3].g = 0xff;
-	led[3].b = 0x00;
-	led[4].r = 0xff;
-	led[4].g = 0x00;
-	led[4].b = 0xff;
+	
 	while (true) {
 		//Start of the loop.
 
@@ -236,19 +192,24 @@ int main() {
 #ifndef __INTELLISENSE__
 			ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 #endif
-				OCR1A = 0;								//Turn off brightness
-#ifdef DISPLAY_IMPLEMENT
+				OCR0A = 0;	//Turn off display backlight
+				OCR0B = 0;	//Turn off power backlight
+				for (uint8_t i = 0; i < 5; i++) {
+					led[i].r = 0;
+					led[i].g = 0;
+					led[i].b = 0;
+				}
+				ws2812_setleds(led, 5);
 				disp << instr::display_power << display_power::display_off << display_power::cursorblink_off << display_power::cursor_off;	//Turn off display
-#endif
 				twi::disable();
-				GICR |= _BV(INT0);						//Enable EXT INT0
+				EIMSK |= _BV(INT0);						//Enable EXT INT0
 				set_sleep_mode(SLEEP_MODE_PWR_DOWN);	//Set the sleep mode to PWR down
 				sleep_enable();							//Enable sleep mode
 				sei();									//Enable global interrupts
 				sleep_cpu();							//Sleep
 				sleep_disable();						//Wake up from sleep here
 				cli();									//Disable global interrupts
-				GICR &= ~_BV(INT0);						//Disable EXT INT0
+				EIMSK &= ~_BV(INT0);						//Disable EXT INT0
 				twi::enable();
 
 				while (true) {
@@ -257,35 +218,43 @@ int main() {
 						break;
 				}
 
-#ifdef DISPLAY_IMPLEMENT
-				disp << instr::display_power << display_power::display_on << display_power::cursorblink_on << display_power::cursor_on;		//Turn on display
-#endif DISPLAY_IMPLEMENT
-#ifdef DS1307_IMPLEMENT
+				disp << instr::display_power << display_power::display_on << display_power::cursorblink_off << display_power::cursor_off;		//Turn on display
+				OCR0A = 0xff;
+				OCR0B = 0xff;
 				regData_old.year1 = 9;				//Force it to update the display (by setting the year to 9x, it's bound to be different)
-#endif
 #ifndef __INTELLISENSE__
 			}
 #endif
 		}
-
 		//---Brightness---//
+		/*
 		ADCSRA |= _BV(ADSC);					//Start ADC conversion to get brightness
 		while (!(ADCSRA & _BV(ADIF)));			//Wait for conversion to finish
-		OCR1A = ADCH;							//Set brightness with read ADC value
+		uint8_t br_u8 = ADCH;
+		OCR0A = brightness;							//Set brightness with read ADC value
+		OCR0B = brightness;
+		*/
 
-		if (timer) {
-			cRGB buf[4];
-			cRGB end = led[4];
-			memcpy(buf, led, sizeof(cRGB) * 4);
-			memcpy(led + 1, buf, sizeof(cRGB) * 4);
-			led[0] = end;
-			timer.reset();
-			timer = 50;
-			timer.start();
-		}
+			if (timer) {
+				for (uint8_t i = 0; i < 5; i++) {
+					RGBColor x = hsv2rgb(hue[i], 100, 100);
+					led[i].r = x.r;
+					led[i].g = x.g;
+					led[i].b = x.b;
+					hue[i]++;
+					if (hue[i] == 360) {
+						hue[i] = 0;
+					}
+				}
+
+				timer.reset();
+				timer = 1;
+				timer.start();
+			}
+		cli();
 		ws2812_setleds(led, 5);
+		sei();
 
-#ifdef DS1307_IMPLEMENT
 		//---Clock---//
 		clock.get_all();						//Update the clock.
 
@@ -293,10 +262,6 @@ int main() {
 			continue;							//Skip the rest of the loop, and start again (continue skips the rest of the loop)
 		regData_old = clock.regData;			//Copy the data over since there was a change
 
-#endif
-
-
-#ifdef PRINT_TIME
 		switch (clock.regData.day) {			//We need to change the 'day' from a number into a readable text string.
 		case(1):								//We 'switched' the day. That means that it goes through to check if any of these 'cases' are equal to day. 'case(1):' means 'if (clock.regData.day == 1)' then do whatever there is until the next case statement
 			strcpy(day_string, "Sun");			//Copy "Sun" into our array 'day_string'. 'day_string' is what will be put on the display.
@@ -325,7 +290,7 @@ int main() {
 		sprintf(time_string, "%u%u:%u%u:%u%u%s\n%s %u%u/%u%u/20%u%u", clock.regData.hour1, clock.regData.hour0, clock.regData.minute1, clock.regData.minute0, clock.regData.second1, clock.regData.second0, clock.regData.ampm_hour1 ? "PM" : "AM",
 			day_string, clock.regData.date1, clock.regData.date0, clock.regData.month1, clock.regData.month0, clock.regData.year1, clock.regData.year0);	//Make our string to output
 		disp << instr::return_home << time_string;	//And output it after returning home (so that it starts from the start).
-#endif
+
 		//This is the end of the loop (note the closing brace '}'). So we go back to the opening brace '{'.
 	}
 }

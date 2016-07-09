@@ -41,7 +41,7 @@
 
 
 # MCU name
-MCU = atmega8
+MCU = atmega328p
 
 
 # Processor frequency.
@@ -62,7 +62,7 @@ MCU = atmega8
 #         F_CPU = 16000000
 #         F_CPU = 18432000
 #         F_CPU = 20000000
-F_CPU = 8000000
+F_CPU = 20000000
 
 
 # Output format. (can be srec, ihex, binary)
@@ -83,7 +83,7 @@ OBJDIR = .
 SRC = light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.c tedavr/source/general.c tedavr/source/button.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = source/$(TARGET).cpp source/ic_ds1307.cpp tedavr/source/ic_hd44780.cpp source/timer.cpp
+CPPSRC = source/$(TARGET).cpp source/ic_ds1307.cpp tedavr/source/ic_hd44780.cpp source/timer.cpp source/colour.cpp
 
 
 # List Assembler source files here.

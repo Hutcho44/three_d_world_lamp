@@ -4,7 +4,7 @@
 static timer::Runtime runtime;
 
 #ifndef __INTELLISENSE__
-ISR(TIMER0_OVF_vect) {
+ISR(TIMER2_OVF_vect) {
 	if (runtime.loop_index == runtime.param.loop) {
 		if (runtime.loop_remainder) {
 			timer::tick();
@@ -12,7 +12,7 @@ ISR(TIMER0_OVF_vect) {
 		}
 		else {
 			runtime.loop_remainder = true;
-			TCNT0 = 0xff - runtime.param.home;
+			TCNT2 = 0xff - runtime.param.home;
 		}
 	}
 	else {
@@ -33,7 +33,7 @@ void timer::next_tick() {
 		//And if it's going straight to the remainder
 		else {
 			runtime.loop_remainder = true;
-			TCNT0 = 0xff - runtime.param.home;
+			TCNT2 = 0xff - runtime.param.home;
 		}
 #ifndef __INTELLISENSE__
 	}
@@ -46,8 +46,9 @@ void timer::init(double const interval) {
 #endif
 		runtime.param = determine_parameters(interval);
 		next_tick();
-		TCCR0 = runtime.param.prescale;
-		TIMSK |= _BV(TOIE0);
+		TCCR2B &= ~(_BV(CS22) | _BV(CS21) | _BV(CS20));	//Clear prescale bits
+		TCCR2B |= runtime.param.prescale;				//Set prescale
+		TIMSK2 |= _BV(TOIE2);							//Enable overflow interrupt
 #ifndef __INTELLISENSE__
 	}
 #endif

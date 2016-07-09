@@ -1,23 +1,28 @@
-#include <avr/io.h>															//Include AVR definitions (EG PORTD)
+//Include AVR definitions
+#include <avr/io.h>
+//Include AVR sleep functions
 #include <avr/sleep.h>
-#include <stdio.h>															//Include things like sprintf
+//Include C standard header stdio.h
+#include <stdio.h>
+//Include C standard header stdlib.h
 #include <stdlib.h>
-#include <string.h>															//Include things like strcpy
-#include "../tedavr/include/tedavr/ic_hd44780.h"							//Include display class
-#include "../tedavr/include/tedavr/button.h"								//Include button functions
-#include "../include/ic_ds1307.h"											//Include clock class
+//Include C standard header string.h
+#include <string.h>
+//Include tedavr ic_hd44780.h
+#include "../tedavr/include/tedavr/ic_hd44780.h"
+//Inclide tedavr button.h
+#include "../tedavr/include/tedavr/button.h"
+//Include ic_ds1307.h
+#include "../include/ic_ds1307.h"
+//Include timer.h
 #include "../include/timer.h"
+//Include colour.h
 #include "../include/colour.h"
-#include "../light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.h"		//Include ws2812 (neopixel) functions (not written by Teddy)
+//Include neopixel light_ws2812.h
+#include "../light_ws2812/light_ws2812_AVR/Light_WS2812/light_ws2812.h"
 
-#ifndef __INTELLISENSE__
-#include <util/atomic.h>
-#endif
-
-//#define DS1307_IMPLEMENT
-//define PRINT_TIME
-
-EMPTY_INTERRUPT(INT0_vect);	//Used to wake the device from sleep mode
+//An empty ISR used to wake the device from sleep mode
+EMPTY_INTERRUPT(INT0_vect);
 
 //This function calculates a bitrate value for the TWI. Don't worry about it.
 constexpr uint8_t calculate_twbr(float const scl_freq, float const prescale = 1, float const cpu_freq = F_CPU) {
@@ -28,19 +33,25 @@ constexpr uint8_t calculate_twbr(float const scl_freq, float const prescale = 1,
 void sfr_init() {
 	//---Inputs/Output Setup---//
 
-	DDRD = 0b11111011;					//Input for power button
-	DDRB = 0b11111111;					//Set all 8 PORTD pins to outputs
-	DDRC = 0b000010;					//Sets two PORTC pins to inputs (the the clock), and the two genertic inputs, and the brightness pot.
-	PORTD = 0b00000100;					//Set the outpus on PORTD to 0, and enables pullup resistor for input 2
-	PORTB = 0;							//Set the outputs on PORTB to 0
-	PORTC = 0b001100;					//Enable pullup resistors for the two genertic inputs
+	//Set DDRD (2 = power button)
+	DDRD = 0b11111011;
+	//Set DDRB
+	DDRB = 0b11111111;
+	//Set DDRB(4/5 = TWI lines, 2/3 = generic inputs, 1 = neopixel out, 0 = ADC)
+	DDRC = 0b000010;
+	//Set PORTD (2 = pullup for power)
+	PORTD = 0b00000100;
+	//Set PORTB
+	PORTB = 0;
+	//Set PORTC (2/3 = pullup for generic inputs)
+	PORTC = 0b001100;
 
 	//---TWI Interface Setup---//
 
-	TWBR = calculate_twbr(100000);		//This is for communitcation with the clock. It wants a 100kHz TWI (two wire) interface.
-										//(continue) This calls the function at the top of the file.
-										//(continue) We tell it we want 100 000 Hz (the number in brackets) and it works out what value needs to go in the TWI bit-rate register to give us that.
-	twi::enable();						//This enables the TWI interface. This means that we can't use the 2 PORTC pins for anything other than TWI for now.
+	//Calculte TWBR (a bitrate for the TWI) for 100kHz
+	TWBR = calculate_twbr(100000);
+	//Enable the TWI
+	twi::enable();
 
 
 	//---PWM Setup---//
@@ -92,13 +103,19 @@ void sfr_init() {
 
 //Remember, we always start the program at main (so start here)
 int main() {
-	sfr_init();							//Initialise special function registers (calls (goes to) the function just above this one)))
+	//Initialise special function registers (calls (goes to) the function just above this one)
+	sfr_init();
 
-	Button power;						//Create an instance of the button class called 'power'. We will use this as the power button. When referring to it, we will use 'power' in the code
-	button_defaultSetup(&power);		//Initialise the power button
-	power.data_port_p = &PIND;			//Power is located on PORTD
-	power.data_shift_portBit = 2;		//Power is located on PORTD2
-	button_update(&power);				//Call the button update function for power
+	//Create an instance of the button class called 'power'. We will use this as the power button.
+	//When referring to it, we will use 'power' in the code.
+	Button power;
+	//Initialise the power button
+	button_defaultSetup(&power);
+	//Power is located on PORTD2
+	power.data_port_p = &PIND;
+	power.data_shift_portBit = 2;
+	//Call the button update function for power
+	button_update(&power);
 
 	IC_HD44780 disp;					//Create an instance of the C++ class IC_HD44780 (the chip that drives the display). This will allow us to interface with the display.
 										//(continue) We call our display 'disp', so when we want it we will use 'disp' in the code.
@@ -134,23 +151,36 @@ int main() {
 	disp.pin.shift_rw = 4;
 
 	//Note: 'instr' is short for instruction
-	//Note: The scope resolution operator '::' allows us to access the things 'inside' the name on the left. EG instr::*whatever* allows us to access the things in instr.
-	//Note: So hd::instr::init_4bit means the display (hd) instruction (instr) to initialise to 4-bit mode (init_4bit)
-	//Note: 'using namespace *whatever*' allows us to not type the *whatever*. EG 'using namespace hd;' means that instead of typeing hd::instr::init_4bit, we can just type instr::init_4bit.
-	//Note: We use the display by doing 'disp << *what we want*'
+	//The scope resolution operator '::' allows us to access the things 'inside' the name on the left.
+	//EG instr::*whatever* allows us to access the things in instr.
+	//So hd::instr::init_4bit means the display (hd) instruction (instr) to initialise to 4-bit mode (init_4bit)
+	//'using namespace *whatever*' allows us to not type the *whatever*.
+	//G 'using namespace hd;' means that instead of typeing hd::instr::init_4bit, we can just type instr::init_4bit.
+	//We use the display by doing 'disp << *what we want*'
 	using namespace hd;
-	disp << instr::init_4bit;							//Initalise the display to 4bit mode.
-														//(continue) This means that we only need 7 IO pins on out MCU, rather than 11
 
-	disp << instr::function_set;						//This sets the function of the display																		
-	disp << function_set::datalength_4;					//(note the 'function_set::'. This means we are elaborating on the function_set command); Set display to 4_bit. These needs to be send twice (already did one)
-	disp << function_set::font_5x8;						//We want 5x8 character font (allows for more stuff)
-	disp << function_set::lines_2;						//Our display has two lines.
+	//Initalise the display to 4bit mode.
+	//This means that we only need 7 IO pins on out MCU, rather than 11
+	disp << instr::init_4bit;
 
-	disp << instr::display_power;						//Next we do the display power instruction
-	disp << display_power::display_on;					//Turn display on
-	disp << display_power::cursor_off;					//Turn cusor on (part of display power instruction)
-	disp << display_power::cursorblink_off;				//Turnon cursor blinking (part of display power instruction)
+	//This sets the function of the display
+	disp << instr::function_set;
+	//Set display to 4_bit. These needs to be send twice (already did one)
+	//(note the 'function_set::'. This means we are elaborating on the function_set command);
+	disp << function_set::datalength_4;
+	//We want 5x8 character font (allows for more stuff)
+	disp << function_set::font_5x8;
+	//Our display has two lines.
+	disp << function_set::lines_2;
+
+	//Next we do the display power instruction
+	disp << instr::display_power;
+	//Turn display on
+	disp << display_power::display_on;
+	//Turn off cursor (part of display power instruction)
+	disp << display_power::cursor_off;
+	//Turn off cursor blinking (part of display power instruction)
+	disp << display_power::cursorblink_off;
 
 	//We don't have to do things one after the other. We can chain the instructions and values by just adding a '<<'
 	//This is the instruction to set the entry mode, we want it so that the cursor moves right, and we don't want the display to shift with it.
@@ -159,114 +189,171 @@ int main() {
 	//Clear the display
 	disp << instr::clear_display;
 
-	timer::init(0.001);
 	
-	IC_DS1307 clock;	//Create an instance of a DS1307 real-time-clock (the real-time-clock that we are using)
-						//(continue) We call it clock, so from now on we will use 'clock' to refer to it.
-	//This one is easier to use. All we need to do is call the clock function 'get_all'. This is done using the '.' operator to access the function within the clock object.
-	clock.get_all();
+	//Create an instance of a DS1307 real-time-clock (the real-time-clock that we are using)
+	//We call it clock, so from now on we will use 'clock' to refer to it.
+	IC_DS1307 clock;
+	
+	//Create a character array that's 4 characters long.
 	char day_string[4];
-	char time_string[(16 * 2) + 2];	//Create a character array that's (16*2)+1 characters long. This is because each line of the display is 16 characters, and we have 2 lines. The +2 for the newline character '\n' and the terminating character '\0'
+	//Create a character array that's (16*2)+2 characters long.
+	//Each line of the display is 16 characters, and we have 2 lines. The +2 for the newline character '\n' and the terminating character '\0'
+	char time_string[(16 * 2) + 2];
 
-	//That's all good, but it only happens once. So we put it in a loop (and we would get rid of the above, because we don't need it twice. But we'll keep it for educational purposes)
-	//while (true) means it will loop forever, since true is always true
-	//We create a new regData called 'regData_old'. We use this to compare whether there has been a change in the time since the last loop.
-	//If there is a change, we re-write the time to the display. If we hadn't done that, it would re-write the time every loop, which sort of looks strange on the display.
 	IC_DS1307::RegData regData_old;
 
-	constexpr float led_offset = 360 / 15;	//Increase this for less 
-	cRGB led[5];
-	float hue[5] = { 0, 1 * led_offset, 2 * led_offset, 3 * led_offset, 4 * led_offset };
+	//Increase this for decreased colour variation along the neopixel strip (set to 1 for identical)
+	constexpr float led_similarity = 15;
+	//Create an offset stating the hue difference between each neopixel
+	constexpr float led_offset = 360 / led_similarity;
+	//The amount of neopixels on the strip
+	constexpr uint8_t led_amount = 5;
+	cRGB led[led_amount];					//Create an array of cRGB neopixels
+	float hue[led_amount];
+	for (uint8_t i = 0; i < led_amount; i++) {
+		//Increase each LEDs hue slightly relative to the next
+		hue[i] = static_cast<size_t>(i * led_offset) % 360;
+	}
+	//Create a brightness float that will be used throughout the program for brightness
 	float brightness = 0;
 	
-	Timer timer;
-	timer = 1;
-	timer.start();
+	//Initialise the timeout timer functions
+	//The 0.001 is the 'interval' parameter, which determines how many seconds it should take for a single 'tick' to elapse in timers.
+	//In this case we set it to 0.001 seconds, or 1ms. Therefore a tick is 1ms.
+	timer::init(0.001);
+
+	//Create a timeout timer to use for the neopizels colour change speed
+	Timer neopixel_timer;
+	//Set it to timeout in 1 tick, or 1ms.
+	neopixel_timer = 1;
+	//Start the timer
+	neopixel_timer.start();
 	
+	//The main program loop
 	while (true) {
-		//Start of the loop.
-
 		//---Power button---//
-		button_update(&power);						//Update the state of power (read it)
-		if (power.flag_state_released) {			//If power was pushed
-#ifndef __INTELLISENSE__
-			ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-#endif
-				OCR0A = 0;	//Turn off display backlight
-				OCR0B = 0;	//Turn off power backlight
-				for (uint8_t i = 0; i < 5; i++) {
-					led[i].r = 0;
-					led[i].g = 0;
-					led[i].b = 0;
-				}
-				ws2812_setleds(led, 5);
-				disp << instr::display_power << display_power::display_off << display_power::cursorblink_off << display_power::cursor_off;	//Turn off display
-				twi::disable();
-				EIMSK |= _BV(INT0);						//Enable EXT INT0
-				set_sleep_mode(SLEEP_MODE_PWR_DOWN);	//Set the sleep mode to PWR down
-				sleep_enable();							//Enable sleep mode
-				sei();									//Enable global interrupts
-				sleep_cpu();							//Sleep
-				sleep_disable();						//Wake up from sleep here
-				cli();									//Disable global interrupts
-				EIMSK &= ~_BV(INT0);						//Disable EXT INT0
-				twi::enable();
-
-				while (true) {
-					button_update(&power);
-					if (power.flag_state_released)
-						break;
-				}
-
-				disp << instr::display_power << display_power::display_on << display_power::cursorblink_off << display_power::cursor_off;		//Turn on display
-				OCR0A = 0xff;
-				OCR0B = 0xff;
-				regData_old.year1 = 9;				//Force it to update the display (by setting the year to 9x, it's bound to be different)
-#ifndef __INTELLISENSE__
+		//Update the state of the power button
+		button_update(&power);
+		//If somebody has pushed and released the power button
+		if (power.flag_state_released) {
+			//Disable global interrupts
+			cli();
+			//Set display brightness to zero
+			OCR0A = 0;
+			//Set power brightness to zero
+			OCR0B = 0;
+			//Set all of the leds/neopixels to zero
+			for (uint8_t i = 0; i < led_amount; i++) {
+				led[i].r = 0;
+				led[i].g = 0;
+				led[i].b = 0;
 			}
-#endif
+			//Set the neopixels
+			ws2812_setleds(led, led_amount);
+			//Turn off the display
+			disp << instr::display_power << display_power::display_off << display_power::cursorblink_off << display_power::cursor_off;
+			//Disable the TWI (need to do this for some reason, or it wont work on wake)
+			twi::disable();
+			//Enable external interrupt 0 (connected to power button, used to wake device from sleep)
+			EIMSK |= _BV(INT0);
+			//Set the sleep mode to power down
+			set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+			//Enable sleep mode
+			sleep_enable();
+			//Enable global interrupts (allowing the device to wake)
+			sei();
+			//Go to sleep
+			sleep_cpu();
+			//The device will wait here until the power button is pushed, enableing the external interrupt 0 and waking the device.
+			
+			//Disable global interrupts
+			cli();
+			//Disable sleep mode
+			sleep_disable();
+			//Disable external interrupt 0
+			EIMSK &= ~_BV(INT0);
+			//Enable the TWI
+			twi::enable();
+
+			//Wait for the power button to be released
+			while (true) {
+				button_update(&power);
+				if (power.flag_state_released)
+					break;
+			}
+			//Tuwn on the display
+			disp << instr::display_power << display_power::display_on << display_power::cursorblink_off << display_power::cursor_off;
+
+			//Set the display brightness to the brightness value
+			OCR0A = brightness;
+			//Set the power brightness to the brightness value
+			OCR0B = brightness;
+			//Set the years 1s digit to zero, forcing a display update
+			regData_old.year1 = 0;
+			//Enable global interrupts
+			sei();
 		}
+
 		//---Brightness---//
-		/*
-		ADCSRA |= _BV(ADSC);					//Start ADC conversion to get brightness
-		while (!(ADCSRA & _BV(ADIF)));			//Wait for conversion to finish
-		uint8_t br_u8 = ADCH;
-		OCR0A = brightness;							//Set brightness with read ADC value
+		
+		//Start ADC conversion
+		ADCSRA |= _BV(ADSC);
+		//Wait for ADC conversion to finish
+		while (!(ADCSRA & _BV(ADIF)));
+		//Copy the result into brightness (the float we created earlier)
+		brightness = ADCH;
+		//Set the display brightness
+		OCR0A = brightness;
+		//Set the power button brightness
 		OCR0B = brightness;
-		*/
 
-			if (timer) {
-				for (uint8_t i = 0; i < 5; i++) {
-					RGBColor x = hsv2rgb(hue[i], 100, 100);
-					led[i].r = x.r;
-					led[i].g = x.g;
-					led[i].b = x.b;
-					hue[i]++;
-					if (hue[i] == 360) {
-						hue[i] = 0;
-					}
+		//If the neopixel timer has run out (been 1ms)
+		if (neopixel_timer) {
+			//Do the fancey colour stuff
+			for (uint8_t i = 0; i < led_amount; i++) {
+				RGBColor x = hsv2rgb(hue[i], 100, brightness);
+				led[i].r = x.r;
+				led[i].g = x.g;
+				led[i].b = x.b;
+				hue[i]++;
+				if (hue[i] == 360) {
+					hue[i] = 0;
 				}
-
-				timer.reset();
-				timer = 1;
-				timer.start();
 			}
+
+			//Reset the timer
+			neopixel_timer.reset();
+			//Set the timer to 1ms
+			neopixel_timer = 1;
+			//Start the timer
+			neopixel_timer.start();
+		}
+
+		//Disable global interrupts
 		cli();
-		ws2812_setleds(led, 5);
+		//Set the neopixels
+		ws2812_setleds(led, led_amount);
+		//Enable global interrupts
 		sei();
 
 		//---Clock---//
-		clock.get_all();						//Update the clock.
 
-		if (clock.regData == regData_old)		//If regData and regData_old are the same
-			continue;							//Skip the rest of the loop, and start again (continue skips the rest of the loop)
-		regData_old = clock.regData;			//Copy the data over since there was a change
+		//Update the clock
+		clock.get_all();
 
-		switch (clock.regData.day) {			//We need to change the 'day' from a number into a readable text string.
-		case(1):								//We 'switched' the day. That means that it goes through to check if any of these 'cases' are equal to day. 'case(1):' means 'if (clock.regData.day == 1)' then do whatever there is until the next case statement
-			strcpy(day_string, "Sun");			//Copy "Sun" into our array 'day_string'. 'day_string' is what will be put on the display.
-			break;								//We use break to exit the switch statement, becuase we found what say it is
-		case(2):								//etc...
+		//If the clock has remained the same since the last loop
+		if (clock.regData == regData_old)
+			//Restart the loop (continue skips the rest of the loop and goes to the start again)
+			continue;
+		//If there has been a time difference, copy the new time into the old time
+		regData_old = clock.regData;
+
+		//Determine the day string
+		switch (clock.regData.day) {
+		case(1):
+			strcpy(day_string, "Sun");
+			break;
+		case(2):
 			strcpy(day_string, "Mon");
 			break;
 		case(3):
@@ -284,13 +371,16 @@ int main() {
 		case(7):
 			strcpy(day_string, "Sat");
 			break;
-		default:								//This is what happenes if something unexpected enters the switch statement. (AKA if it's not covered by the case statements)
+		default:
 			break;
 		}
-		sprintf(time_string, "%u%u:%u%u:%u%u%s\n%s %u%u/%u%u/20%u%u", clock.regData.hour1, clock.regData.hour0, clock.regData.minute1, clock.regData.minute0, clock.regData.second1, clock.regData.second0, clock.regData.ampm_hour1 ? "PM" : "AM",
-			day_string, clock.regData.date1, clock.regData.date0, clock.regData.month1, clock.regData.month0, clock.regData.year1, clock.regData.year0);	//Make our string to output
-		disp << instr::return_home << time_string;	//And output it after returning home (so that it starts from the start).
-
-		//This is the end of the loop (note the closing brace '}'). So we go back to the opening brace '{'.
+		//Print the time string into the 'time_string' character array (Google printf for details).
+		sprintf(time_string, "%u%u:%u%u:%u%u%s\n%s %u%u/%u%u/20%u%u",
+			clock.regData.hour1, clock.regData.hour0, clock.regData.minute1, clock.regData.minute0,
+			clock.regData.second1, clock.regData.second0, clock.regData.ampm_hour1 ? "PM" : "AM",
+			day_string, clock.regData.date1, clock.regData.date0, clock.regData.month1, clock.regData.month0,
+			clock.regData.year1, clock.regData.year0);
+		//Display the time string (return_home will set the position to the start of the display)
+		disp << instr::return_home << time_string;
 	}
 }

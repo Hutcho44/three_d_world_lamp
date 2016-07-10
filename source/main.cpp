@@ -117,8 +117,9 @@ int main() {
 	//Call the button update function for power
 	button_update(&power);
 
-	IC_HD44780 disp;					//Create an instance of the C++ class IC_HD44780 (the chip that drives the display). This will allow us to interface with the display.
-										//(continue) We call our display 'disp', so when we want it we will use 'disp' in the code.
+	//Create an instance of the C++ class IC_HD44780 (the chip that drives the display).This will allow us to interface with the display.
+	//We call our display 'disp', so when we want it we will use 'disp' in the code.
+	IC_HD44780 disp;
 
 	//These tell disp the pin data direction registers for the respective pins. This is so that when it needs to, the MCU can switch them between inputs and outputs.
 	disp.pin.ddr_data0 = &DDRB;
@@ -208,7 +209,9 @@ int main() {
 	constexpr float led_offset = 360 / led_similarity;
 	//The amount of neopixels on the strip
 	constexpr uint8_t led_amount = 5;
-	cRGB led[led_amount];					//Create an array of cRGB neopixels
+	//Create an array of cRGB lights (the neopixels).
+	cRGB led[led_amount];
+	//Create an array of floating point values, representing the hue of each neopixel
 	float hue[led_amount];
 	for (uint8_t i = 0; i < led_amount; i++) {
 		//Increase each LEDs hue slightly relative to the next
@@ -216,6 +219,8 @@ int main() {
 	}
 	//Create a brightness float that will be used throughout the program for brightness
 	float brightness = 0;
+	//Create a brightness float that will be used for determining of there was a difference in the brightness
+	float brightness_old = 0;
 	
 	//Initialise the timeout timer functions
 	//The 0.001 is the 'interval' parameter, which determines how many seconds it should take for a single 'tick' to elapse in timers.
@@ -306,21 +311,33 @@ int main() {
 		OCR0A = brightness;
 		//Set the power button brightness
 		OCR0B = brightness;
+		//Change the brightness from 0-255 to 0-100. (used with the neopixels)
+		brightness = (brightness / 255) * 100;
 
-		//If the neopixel timer has run out (been 1ms)
-		if (neopixel_timer) {
-			//Do the fancey colour stuff
+		//Store whether the timer has elapsed in a bool.
+		//This is becuase a change during the next segment could desync the neopixels.
+		bool timer_elapsed = neopixel_timer;
+		//If there has been a change in brightness or the timer has elapsed
+		if ((brightness != brightness_old) || timer_elapsed) {
 			for (uint8_t i = 0; i < led_amount; i++) {
+				//Convert HSV to RGB
 				RGBColor x = hsv2rgb(hue[i], 100, brightness);
+				//Copy over the data
 				led[i].r = x.r;
 				led[i].g = x.g;
 				led[i].b = x.b;
-				hue[i]++;
-				if (hue[i] == 360) {
-					hue[i] = 0;
-				}
+				//If the timer has elapsed (indicating a need to change the neopixels)
+				if(timer_elapsed)
+					//Change the neopixels colour values
+					hue[i]++;
+				hue[i] = static_cast<size_t>(hue[i]) % 360;
 			}
-
+			//Disable global interrupts
+			cli();
+			//Set the neopixels
+			ws2812_setleds(led, led_amount);
+			//Enable global interrupts
+			sei();
 			//Reset the timer
 			neopixel_timer.reset();
 			//Set the timer to 1ms
@@ -328,13 +345,8 @@ int main() {
 			//Start the timer
 			neopixel_timer.start();
 		}
-
-		//Disable global interrupts
-		cli();
-		//Set the neopixels
-		ws2812_setleds(led, led_amount);
-		//Enable global interrupts
-		sei();
+		//Copy over the brightness value for next loop comparison
+		brightness_old = brightness;
 
 		//---Clock---//
 

@@ -338,12 +338,14 @@ int main() {
 			ws2812_setleds(led, led_amount);
 			//Enable global interrupts
 			sei();
-			//Reset the timer
-			neopixel_timer.reset();
-			//Set the timer to 1ms
-			neopixel_timer = 1;
-			//Start the timer
-			neopixel_timer.start();
+			if (timer_elapsed) {
+				//Reset the timer
+				neopixel_timer.reset();
+				//Set the timer to 1ms
+				neopixel_timer = 1;
+				//Start the timer
+				neopixel_timer.start();
+			}
 		}
 		//Copy over the brightness value for next loop comparison
 		brightness_old = brightness;

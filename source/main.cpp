@@ -204,7 +204,7 @@ int main() {
 	IC_DS1307::RegData regData_old;
 
 	//Increase this for decreased colour variation along the neopixel strip (set to 1 for identical)
-	constexpr float led_similarity = 30;
+	constexpr float led_similarity = 31;
 	//Create an offset stating the hue difference between each neopixel
 	constexpr float led_offset = 360 / led_similarity;
 	//The amount of neopixels on the strip
